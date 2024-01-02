@@ -13,7 +13,6 @@ def convert_to_wav(input_file):
 def transcribe_audio(audio_file):
     model = whisper.load_model("base")
     result = model.transcribe(audio_file)
-    print (result["text"])
     return result["text"]
 
 def censor_profanity(text):
@@ -22,7 +21,7 @@ def censor_profanity(text):
     
     for profanity in profanity_keywords:
         text = text.replace(profanity, '*' * len(profanity))
-    print (text)
+    
     return text
 
 def mute_profanity(audio_file, transcript):
@@ -30,11 +29,30 @@ def mute_profanity(audio_file, transcript):
 
     for phrase in transcript.split():
         if '*' in phrase:
-            start_time = transcript.index(phrase) / len(transcript) * len(audio)
-            end_time = start_time + len(phrase) / len(transcript) * len(audio)
-            audio = audio.overlay(AudioSegment.silent(duration=int(end_time - start_time)), position=int(start_time))
+            # Get the starting index of the profanity in the original transcript
+            start_index = transcript.find(phrase)
+            
+            # Calculate the duration of silence based on the length of the profanity word
+            silence_duration = len(phrase) / len(transcript) * len(audio)
+            
+            # Calculate the start time based on the starting index and the total length of the audio
+            start_time = start_index / len(transcript) * len(audio)
+            
+            # Calculate the end time to include both the silence and the profanity duration
+            end_time = start_time + silence_duration
+            
+            # Split the audio into three parts: before profanity, during profanity, after profanity
+            part1 = audio[:int(start_time - 80)]  # Remove 80 milliseconds ahead
+            part2 = AudioSegment.silent(duration=int(end_time - start_time))
+            part3 = audio[int(end_time):]
+            
+            # Combine the three parts
+            audio = part1 + part2 + part3
 
     return audio
+
+
+
 
 def main():
     parser = argparse.ArgumentParser(description='Profanity Silencer for Audio Files')
