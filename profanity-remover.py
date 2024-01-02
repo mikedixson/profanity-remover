@@ -90,53 +90,48 @@ def transcribe_audio(audio_file):
     model = whisper.load_model("base")
     modify_model(model)
     result = model.transcribe(audio_file, suppress_silence=True, ts_num=16)
-    result.to_tsv('transcribe.tsv')
-    return result.to_tsv() #TSV
+    result.to_tsv('transcribe.tsv', segment_level=False, word_level=True)
+    return result.to_tsv('', segment_level=False, word_level=True) #TSV
     #return result["words"]
 
 def censor_profanity(words):
     """
-    Censors profanity in the provided list of words by replacing profanity keywords with asterisks.
+    Flags profanity in the provided list of words.
 
     Parameters:
     - words (list): List of tuples, each containing a word and its start and end times.
 
     Returns:
-    - list: List of tuples with censored words.
+    - list: List of tuples with censored words and a profanity flag.
     """
     profanity_keywords = ["fucking", "fuck", "shit", "god damn", "damn"]
     censored_words = []
     for start_time, end_time, word in words:
-        for profanity in profanity_keywords:
-            if profanity in word:
-                word = word.replace(profanity, '*' * len(profanity))
-        censored_words.append((start_time, end_time, word))
+        is_profanity = any(profanity in word.lower() for profanity in profanity_keywords)
+        censored_words.append((start_time, end_time, word, is_profanity))
     return censored_words
 
 def mute_profanity(audio_file, words):
     """
-    Mutes sections of the audio where profanity is detected in the transcript.
+    Mutes sections of the audio where profanity is flagged.
 
     Parameters:
     - audio_file (str): Path to the input audio file.
-    - transcript (str): Transcribed text of the audio.
+    - words (list): List of tuples, each containing a word, its start and end times, and a profanity flag.
 
     Returns:
     - pydub.AudioSegment: Muted audio.
     """
     audio = AudioSegment.from_file(audio_file)
-    segments = []
-    last_end = 0
+    for start_time, end_time, word, is_profanity in words:
+        if is_profanity:
+            start_ms = int(start_time)
+            end_ms = int(end_time)
+            silence = AudioSegment.silent(duration=end_ms - start_ms)
+            audio = audio[:start_ms] + silence + audio[end_ms:]
+    return audio
 
-    for start_time, end_time, word in words:
-        if '*' in word:
-            segments.append(audio[last_end:int(start_time * 1000)])
-            segments.append(AudioSegment.silent(duration=int((end_time - start_time) * 1000)))
-            last_end = int(end_time * 1000)
 
-    segments.append(audio[last_end:])  # Add the remaining part of the audio
-    muted_audio = sum(segments)  # Combine all segments
-    return muted_audio
 
 
 def main():
