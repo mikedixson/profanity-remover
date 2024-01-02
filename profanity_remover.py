@@ -61,7 +61,7 @@ def mute_profanity(audio_file, words, padding_ms=50):
     Mutes sections of the audio where profanity is flagged, with additional padding.
     """
     audio = AudioSegment.from_file(audio_file)
-    for start_time, end_time, _, is_profanity in words:
+    for start_time, end_time, word, is_profanity in words:
         if is_profanity:
             start_ms = max(0, int(start_time) - padding_ms)
             end_ms = min(len(audio), int(end_time) + padding_ms)
@@ -105,22 +105,11 @@ def main():
         muted_audio = mute_profanity(input_file, censored_words, padding_ms=50)
         muted_audio.export(output_file, format="mp3")
         print("Profanity silenced successfully.")
-    except FileNotFoundError as e:
-        print(f"File not found: {e}")
-    except IOError as e:
-        print(f"I/O error: {e}")
-    except Exception as e:  # Catching a general exception as a last resort
-        print(f"An unexpected error occurred: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
     finally:
         if wav_file:
-            try:
-                remove_file(wav_file)
-            except FileNotFoundError:
-                print("The file to be removed was not found.")
-            except PermissionError:
-                print("Permission denied: Unable to remove the file.")
-            except Exception as e:  # Catching a general exception as a last resort
-                print(f"An unexpected error occurred while removing the file: {e}")
+            remove_file(wav_file)
 
 if __name__ == "__main__":
     main()
