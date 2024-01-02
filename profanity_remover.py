@@ -74,6 +74,7 @@ def remove_file(file_path):
     """
     Removes the specified file from the filesystem.
     """
+# pylint: disable=broad-exception-caught
     try:
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -98,7 +99,7 @@ def main():
         print("Converting input audio to WAV format...")
         wav_file = convert_to_wav(input_file)
         input_file = wav_file
-
+# pylint: disable=broad-exception-caught
     try:
         tsv_string = transcribe_audio(input_file)
         words = parse_tsv(tsv_string)
