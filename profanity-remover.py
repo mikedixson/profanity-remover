@@ -89,10 +89,9 @@ def transcribe_audio(audio_file):
     """
     model = whisper.load_model("base")
     modify_model(model)
-    result = model.transcribe(audio_file, suppress_silence=True, ts_num=16)
-    result.to_tsv('transcribe.tsv', segment_level=False, word_level=True)
+    result = model.transcribe(audio_file, suppress_silence=True)
+    #result.to_tsv('transcribe.tsv', segment_level=False, word_level=True) #debug transcription to tsv file
     return result.to_tsv('', segment_level=False, word_level=True) #TSV
-    #return result["words"]
 
 def censor_profanity(words):
     """
