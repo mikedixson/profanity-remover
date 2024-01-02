@@ -4,7 +4,8 @@ Profanity Remover
 This Python script uses speech recognition and audio manipulation
 to censor profanity in an audio file.
 It transcribes the audio, searches for profanity keywords, and replaces them with asterisks.
-The script then applies silence to the original audio file based on the location of profanity, effectively "muting" profane sections.
+The script then applies silence to the original audio file based on the location of
+profanity, effectively "muting" profane sections.
 The output is a new audio file with profanity silenced.
 """
 
@@ -61,7 +62,7 @@ def mute_profanity(audio_file, words, padding_ms=50):
     Mutes sections of the audio where profanity is flagged, with additional padding.
     """
     audio = AudioSegment.from_file(audio_file)
-    for start_time, end_time, word, is_profanity in words:
+    for start_time, end_time, _, is_profanity in words:
         if is_profanity:
             start_ms = max(0, int(start_time) - padding_ms)
             end_ms = min(len(audio), int(end_time) + padding_ms)
