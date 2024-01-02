@@ -110,13 +110,14 @@ def censor_profanity(words):
         censored_words.append((start_time, end_time, word, is_profanity))
     return censored_words
 
-def mute_profanity(audio_file, words):
+def mute_profanity(audio_file, words, padding_ms=50):  # Default padding set to 50 milliseconds
     """
-    Mutes sections of the audio where profanity is flagged.
+    Mutes sections of the audio where profanity is flagged, with additional padding.
 
     Parameters:
     - audio_file (str): Path to the input audio file.
     - words (list): List of tuples, each containing a word, its start and end times, and a profanity flag.
+    - padding_ms (int): Milliseconds of padding to add around the profanity.
 
     Returns:
     - pydub.AudioSegment: Muted audio.
@@ -124,11 +125,12 @@ def mute_profanity(audio_file, words):
     audio = AudioSegment.from_file(audio_file)
     for start_time, end_time, word, is_profanity in words:
         if is_profanity:
-            start_ms = int(start_time)
-            end_ms = int(end_time)
+            start_ms = max(0, int(start_time) - padding_ms)  # Ensure start_ms is not negative
+            end_ms = min(len(audio), int(end_time) + padding_ms)  # Ensure end_ms does not exceed audio length
             silence = AudioSegment.silent(duration=end_ms - start_ms)
             audio = audio[:start_ms] + silence + audio[end_ms:]
     return audio
+
 
 
 
@@ -154,7 +156,7 @@ def main():
         tsv_string = transcribe_audio(input_file)
         words = parse_tsv(tsv_string)
         censored_words = censor_profanity(words)
-        muted_audio = mute_profanity(input_file, censored_words)
+        muted_audio = mute_profanity(input_file, censored_words, padding_ms=50)
         muted_audio.export(output_file, format="mp3")
         print("Profanity silenced successfully.")
     except Exception as e:
